@@ -1,18 +1,26 @@
 import java.io.Console;
 import java.util.Scanner;
+import java.util.HashMap;
 
 public class Application {
 
-    static String[] collectCustomerInfo(){
+    static HashMap<String, String> collectCustomerInfo(String operation){
         System.out.println("--- CUSTOMER DATA ---");
-        String[] data = new String[3];
+        HashMap<String, String> data = new HashMap<String, String>();
         Scanner scan = new Scanner(System.in);
-        System.out.print("Name: ");
-        data[0] = scan.nextLine();
-        System.out.print("Surname: ");
-        data[1] = scan.nextLine();
-        System.out.print("Email: ");
-        data[2] = scan.nextLine();
+        if(operation.equals("add")){
+            System.out.print("Name: ");
+            data.put("name", scan.nextLine());
+            System.out.print("Surname: ");
+            data.put("surname", scan.nextLine());
+            System.out.print("Email: ");
+            data.put("email", scan.nextLine());
+        } else if (operation.equals("register")) {
+            System.out.print("Customer email: ");
+            data.put("email", scan.nextLine());
+            System.out.print("Login: ");
+            data.put("login", scan.nextLine());
+        }
         return data;
     }
 
@@ -70,7 +78,7 @@ public class Application {
             switch (userInput) {
                 case 1 -> db.listAllCars();
                 case 2 -> {
-                    String[] info = collectCustomerInfo();
+                    HashMap<String, String> info = collectCustomerInfo("add");
                     db.addCustomer(info);
                 }
             }

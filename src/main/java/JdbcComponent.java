@@ -1,4 +1,5 @@
 import java.sql.*;
+import java.util.HashMap;
 
 public class JdbcComponent {
     String uri, user, password;
@@ -36,10 +37,10 @@ public class JdbcComponent {
             System.out.println("ERROR: Unable to list the cars!");
         }
     }
-    public void addCustomer(String[] customerData){
-        String name = customerData[0];
-        String surname = customerData[1];
-        String email = customerData[2];
+    public void addCustomer(HashMap<String, String> customerData){
+        String name = customerData.get("name");
+        String surname = customerData.get("surname");
+        String email = customerData.get("email");
         try (
                 Connection connection = DriverManager.getConnection(uri, user, password);
                 PreparedStatement insertStatement = connection.prepareStatement(
