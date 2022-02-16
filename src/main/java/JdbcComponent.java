@@ -76,12 +76,15 @@ public class JdbcComponent {
         String email = customerData.get("email");
         String login = customerData.get("login");
         try (Connection connection = DriverManager.getConnection(uri, user, password)) {
-            PreparedStatement statement = connection.prepareStatement("SELECT email FROM customer WHERE email=?");
+            PreparedStatement statement = connection.prepareStatement("SELECT email,login FROM customer WHERE email=?");
             statement.setString(1, email);
             ResultSet result = statement.executeQuery();
             if(!result.next()) {
                 throw new InvalidParameterException(String.format("ERROR: Customer with email address <%s> does not exist!", email));
             } else {
+                if(!(result.getString("login") == null)){
+                    throw new InvalidParameterException("ERROR: This user is registered!");
+                }
                 System.out.printf("INFO: Customer with email <%s> found. Checking username availability...\n", email);
                 statement = connection.prepareStatement("SELECT login FROM customer WHERE login=?");
                 statement.setString(1, login);
@@ -104,7 +107,98 @@ public class JdbcComponent {
         } catch (InvalidParameterException e) {
             System.out.println(e.getMessage());
         } catch (Exception e) {
-            System.out.println("ERROR: Unable to register customer!");
+            System.out.println("ERROR: Unable to register customer!\n");
+            e.printStackTrace();
         }
     }
+    public boolean authenticateUser(HashMap<String, String> info){
+        try (Connection connection = DriverManager.getConnection(uri, user, password)){
+            PreparedStatement statement = connection.prepareStatement("SELECT login FROM customer WHERE login=? AND passwd=?");
+            statement.setString(1, info.get("login"));
+            statement.setString(2, info.get("password"));
+            ResultSet result = statement.executeQuery();
+            if(result.next())
+                System.out.println("INFO: Successfully logged in!");
+                return true;
+        } catch (Exception e){
+            System.out.println("ERROR: Unable to authenticate user!");
+        }
+        return false;
+    }
+    public boolean isRentalPossible(String login){
+        try(Connection connection = DriverManager.getConnection(uri,user,password)){
+            PreparedStatement statement = connection.prepareStatement("""
+                    SELECT start_date, return_date FROM customer, booking
+                    WHERE customer.id=booking.customer_id
+                    AND customer.login=? AND return_date IS NULL """);
+            statement.setString(1, login);
+            if (statement.executeQuery().next()) {
+                System.out.println("ERROR: You cannot rent a car, because you at least one car not returned!");
+                return false;
+            } else {
+                System.out.println("INFO: All cars returned, you can rent a new car!");
+                return true;
+            }
+        } catch (Exception e){
+            System.out.printf("ERROR: Unable to get rental information for user '%s'!", login);
+        }
+        return false;
+    }
+    public void printCities(){
+        try (Connection connection = DriverManager.getConnection(uri, user, password)){
+            PreparedStatement statement = connection.prepareStatement("SELECT city FROM branch");
+            ResultSet result = statement.executeQuery();
+            while(result.next())
+                System.out.println(result.getString("city"));
+        } catch (Exception e) {
+            System.out.println("ERROR: Unable to list the cities!");
+        }
+    }
+//    public void printAvailableCarsByCity(String city, String rentStart){
+//        boolean available;
+//        try (Connection connection = DriverManager.getConnection(uri, user, password)) {
+//            PreparedStatement statement = connection.prepareStatement(String.format("""
+//                    SELECT reg_plate,make,model,rent_24h AS daily,rent_7d AS weekly, rent_1m AS monthly
+//                     FROM car,price_cat,branch
+//                     WHERE car.price_cat=price_cat.id
+//                     AND car.branch=branch.id
+//                     AND branch.city=%s
+//                     ORDER BY day;""", city));
+//            ResultSet carsInLocation = statement.executeQuery();
+//
+//            while(carsInLocation.next()){
+//                String reg_plate = carsInLocation.getString("reg_plate");
+//                statement = connection.prepareStatement("""
+//                        SELECT start_date, return_date
+//                        FROM booking, car
+//                        WHERE car.id = booking.car_id
+//                        AND car.reg_plate = '?'
+//                        AND ? BETWEEN start_date AND return_date """);
+//                statement.setString(1, reg_plate);
+//                statement.setString(2, rentStart);
+//                ResultSet rentSchedule = statement.executeQuery();
+//                available = !rentSchedule.next();
+//
+//                statement = connection.prepareStatement("""
+//                        SELECT start_date
+//                        FROM booking, car
+//                        WHERE car.id = booking.car_id
+//                        AND car.reg_plate = '?'
+//                        AND ? < start_date ORDER BY start_date LIMIT 1 """);
+//                statement.setString(1, reg_plate);
+//                statement.setString(2, rentStart);
+//                ResultSet nextRent = statement.executeQuery();
+//                if(available){
+//                    String availableUntil = nextRent.next() ? nextRent.getString("start_date") : "(no limits)";
+//                    System.out.printf("INFO: %s %s (%s) is available until %s.",
+//                            carsInLocation.getString("make"),
+//                            carsInLocation.getString("model"),
+//                            carsInLocation.getString("reg_plate"),
+//                            availableUntil);
+//                }
+//            }
+//        } catch (Exception e) {
+//            System.out.println("ERROR: Unable to list available cars!");
+//        }
+//    }
 }

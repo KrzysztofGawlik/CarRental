@@ -5,12 +5,12 @@ import java.util.HashMap;
 public class Application {
 
     enum customerOperation {
-        ADD, REGISTER
+        ADD, REGISTER, LOGIN
     }
 
     static HashMap<String, String> collectCustomerInfo(customerOperation co){
         System.out.println("--- CUSTOMER DATA ---");
-        HashMap<String, String> data = new HashMap<String, String>();
+        HashMap<String, String> data = new HashMap<>();
         Scanner scan = new Scanner(System.in);
         if(co == customerOperation.ADD){
             System.out.print("Name: ");
@@ -24,6 +24,16 @@ public class Application {
             data.put("email", scan.nextLine());
             System.out.print("Login: ");
             data.put("login", scan.nextLine());
+        } else if (co == customerOperation.LOGIN) {
+            System.out.print("Login: ");
+            data.put("login", scan.nextLine());
+            Console console = System.console();
+            if (console != null) {
+                data.put("password", new String(console.readPassword("Password: ")));
+            } else {
+                System.out.print("No console available - password will be VISIBlE on the screen!\nPassword: ");
+                data.put("password", scan.nextLine());
+            }
         }
         return data;
     }
@@ -69,6 +79,7 @@ public class Application {
         JdbcComponent db = new JdbcComponent(uri, username, passwd);
 
         int userInput = 1;
+        HashMap<String, String> info = new HashMap<>();
         while(userInput != 0){
             pause("Press Enter to continue...");
             System.out.println("""
@@ -76,20 +87,28 @@ public class Application {
                             [1] List all cars
                             [2] Add a customer
                             [3] Register customer
+                            [4] Rent a car
                             [0] Quit"""
                     );
             userInput = scan.nextInt();
             switch (userInput) {
                 case 1 -> db.listAllCars();
                 case 2 -> {
-                    HashMap<String, String> info = collectCustomerInfo(customerOperation.ADD);
+                    info = collectCustomerInfo(customerOperation.ADD);
                     db.addCustomer(info);
                 }
                 case 3 -> {
-                    HashMap<String, String> info = collectCustomerInfo(customerOperation.REGISTER);
+                    info = collectCustomerInfo(customerOperation.REGISTER);
                     db.registerCustomer(info);
                 }
+                case 4 -> {
+                    info = collectCustomerInfo(customerOperation.LOGIN);
+                    if(db.authenticateUser(info) && db.isRentalPossible(info.get("login"))){
+                        // Code if user logged in and has no car to return
+                    }
+                }
             }
+            info.clear();
         }
 
     }
