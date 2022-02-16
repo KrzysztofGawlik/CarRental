@@ -4,18 +4,22 @@ import java.util.HashMap;
 
 public class Application {
 
-    static HashMap<String, String> collectCustomerInfo(String operation){
+    enum customerOperation {
+        ADD, REGISTER
+    }
+
+    static HashMap<String, String> collectCustomerInfo(customerOperation co){
         System.out.println("--- CUSTOMER DATA ---");
         HashMap<String, String> data = new HashMap<String, String>();
         Scanner scan = new Scanner(System.in);
-        if(operation.equals("add")){
+        if(co == customerOperation.ADD){
             System.out.print("Name: ");
             data.put("name", scan.nextLine());
             System.out.print("Surname: ");
             data.put("surname", scan.nextLine());
             System.out.print("Email: ");
             data.put("email", scan.nextLine());
-        } else if (operation.equals("register")) {
+        } else if (co == customerOperation.REGISTER) {
             System.out.print("Customer email: ");
             data.put("email", scan.nextLine());
             System.out.print("Login: ");
@@ -78,8 +82,12 @@ public class Application {
             switch (userInput) {
                 case 1 -> db.listAllCars();
                 case 2 -> {
-                    HashMap<String, String> info = collectCustomerInfo("add");
+                    HashMap<String, String> info = collectCustomerInfo(customerOperation.ADD);
                     db.addCustomer(info);
+                }
+                case 3 -> {
+                    HashMap<String, String> info = collectCustomerInfo(customerOperation.REGISTER);
+                    db.registerCustomer(info);
                 }
             }
         }
