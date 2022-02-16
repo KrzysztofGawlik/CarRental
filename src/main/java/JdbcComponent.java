@@ -46,22 +46,28 @@ public class JdbcComponent {
             System.out.println("ERROR: Unable to list the cars!");
         }
     }
-    public void addCustomer(HashMap<String, String> customerData){
+    public void addCustomer(HashMap<String, String> customerData) {
         String name = customerData.get("name");
         String surname = customerData.get("surname");
         String email = customerData.get("email");
-        try (
-                Connection connection = DriverManager.getConnection(uri, user, password);
-                PreparedStatement insertStatement = connection.prepareStatement(
-                        "INSERT INTO customer(fName, surname, email) VALUES (?,?,?)")
-                ) {
-            System.out.println("INFO: Setting parameters...");
-            insertStatement.setString(1, name);
-            insertStatement.setString(2, surname);
-            insertStatement.setString(3, email);
-            System.out.println("INFO: Parameters set. Processing query...");
-            insertStatement.executeUpdate();
-            System.out.printf("INFO: Customer %s %s <%s> has been added to the database!", name, surname, email);
+        try (Connection connection = DriverManager.getConnection(uri, user, password)) {
+            PreparedStatement statement = connection.prepareStatement("SELECT email FROM customer WHERE email=?");
+            statement.setString(1, email);
+            ResultSet result = statement.executeQuery();
+            if (result.next()) {
+                throw new InvalidParameterException(String.format("ERROR: Customer with email <%s> already exists!", email));
+            } else {
+                statement = connection.prepareStatement("INSERT INTO customer(fName, surname, email) VALUES (?,?,?)");
+                System.out.println("INFO: Setting parameters...");
+                statement.setString(1, name);
+                statement.setString(2, surname);
+                statement.setString(3, email);
+                System.out.println("INFO: Parameters set. Processing query...");
+                statement.executeUpdate();
+                System.out.printf("INFO: Customer %s %s <%s> has been added to the database!", name, surname, email);
+            }
+        } catch (InvalidParameterException e) {
+            System.out.println(e.getMessage());
         } catch (Exception e) {
             System.out.println("ERROR: Unable to add a customer!");
         }
