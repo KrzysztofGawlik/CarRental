@@ -96,6 +96,7 @@ public class Application {
                 System.out.println("ERROR: Unrecognizable input, please provide a valid number...");
             }
             switch (userInput) {
+                case 0 -> {}
                 case 1 -> db.printCars(false, null, 0);
                 case 2 -> {
                     info = collectCustomerInfo(customerOperation.ADD);

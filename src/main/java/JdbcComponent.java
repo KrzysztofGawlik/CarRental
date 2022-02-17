@@ -58,7 +58,7 @@ public class JdbcComponent {
                     String branch = resultSet.getString("branch_name");
                     String category = resultSet.getString("label");
                     float[] price = {
-                            resultSet.getFloat("rent_24h"),
+                            resultSet.getFloat("format(rent_24h,2)"),
                             resultSet.getFloat("rent_7d"),
                             resultSet.getFloat("rent_1m")};
                     if (detailed) {
@@ -144,12 +144,14 @@ public class JdbcComponent {
             statement.setString(1, info.get("login"));
             statement.setString(2, info.get("password"));
             ResultSet result = statement.executeQuery();
-            if(result.next())
+            if(result.next()) {
                 System.out.println("INFO: Successfully logged in!");
                 return true;
+            }
         } catch (Exception e){
             System.out.println("ERROR: Unable to authenticate user!");
         }
+        System.out.println("INFO: Username or password are incorrect.");
         return false;
     }
     public boolean isRentalPossible(String login){
