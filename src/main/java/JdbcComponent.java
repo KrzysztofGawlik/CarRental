@@ -26,12 +26,13 @@ public class JdbcComponent {
         }
         return password;
     }
-    public void printCars(boolean detailed, @Nullable String city, int price_cat) {
+    public void printCars(boolean detailed, @Nullable String city, int price_cat, boolean availableOnly) {
         try (Connection connection = DriverManager.getConnection(uri, user, password)) {
 
             String sql = "SELECT * FROM car, price_cat, branch WHERE car.price_cat=price_cat.id AND car.branch=branch.id ";
             sql += (city == null) ? "AND city=city " : String.format("AND city='%s' ", city) ;
             sql += (price_cat == 0) ? "AND price_cat.id=price_cat.id " : String.format("AND price_cat.id=%d ", price_cat);
+            if(availableOnly) sql += "AND returned=true";
             PreparedStatement preparedStatement = connection.prepareStatement(sql);
             ResultSet resultSet = preparedStatement.executeQuery();
             String header = "";
@@ -160,9 +161,9 @@ public class JdbcComponent {
     public boolean isRentalPossible(String login){
         try(Connection connection = DriverManager.getConnection(uri,user,password)){
             PreparedStatement statement = connection.prepareStatement("""
-                    SELECT start_date, return_date FROM customer, booking
-                    WHERE customer.id=booking.customer_id
-                    AND customer.login=? AND return_date='0000-00-00 00:00:00' """);
+                    SELECT returned FROM customer, car, booking 
+                    WHERE customer.id=booking.customer_id AND booking.car_id=car.id 
+                    AND customer.login=? AND returned=false """);
             statement.setString(1, login);
             if (statement.executeQuery().next()) {
                 System.out.println("ERROR: You cannot rent a car, because you have at least one car not returned!");
@@ -186,51 +187,4 @@ public class JdbcComponent {
             System.out.println("ERROR: Unable to list the cities!");
         }
     }
-//    public void printAvailableCarsByCity(String city, String rentStart){
-//        boolean available;
-//        try (Connection connection = DriverManager.getConnection(uri, user, password)) {
-//            PreparedStatement statement = connection.prepareStatement(String.format("""
-//                    SELECT reg_plate,make,model,rent_24h AS daily,rent_7d AS weekly, rent_1m AS monthly
-//                     FROM car,price_cat,branch
-//                     WHERE car.price_cat=price_cat.id
-//                     AND car.branch=branch.id
-//                     AND branch.city=%s
-//                     ORDER BY day;""", city));
-//            ResultSet carsInLocation = statement.executeQuery();
-//
-//            while(carsInLocation.next()){
-//                String reg_plate = carsInLocation.getString("reg_plate");
-//                statement = connection.prepareStatement("""
-//                        SELECT start_date, return_date
-//                        FROM booking, car
-//                        WHERE car.id = booking.car_id
-//                        AND car.reg_plate = '?'
-//                        AND ? BETWEEN start_date AND return_date """);
-//                statement.setString(1, reg_plate);
-//                statement.setString(2, rentStart);
-//                ResultSet rentSchedule = statement.executeQuery();
-//                available = !rentSchedule.next();
-//
-//                statement = connection.prepareStatement("""
-//                        SELECT start_date
-//                        FROM booking, car
-//                        WHERE car.id = booking.car_id
-//                        AND car.reg_plate = '?'
-//                        AND ? < start_date ORDER BY start_date LIMIT 1 """);
-//                statement.setString(1, reg_plate);
-//                statement.setString(2, rentStart);
-//                ResultSet nextRent = statement.executeQuery();
-//                if(available){
-//                    String availableUntil = nextRent.next() ? nextRent.getString("start_date") : "(no limits)";
-//                    System.out.printf("INFO: %s %s (%s) is available until %s.",
-//                            carsInLocation.getString("make"),
-//                            carsInLocation.getString("model"),
-//                            carsInLocation.getString("reg_plate"),
-//                            availableUntil);
-//                }
-//            }
-//        } catch (Exception e) {
-//            System.out.println("ERROR: Unable to list available cars!");
-//        }
-//    }
 }

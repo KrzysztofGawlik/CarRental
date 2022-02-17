@@ -97,7 +97,7 @@ public class Application {
             }
             switch (userInput) {
                 case 0 -> {}
-                case 1 -> db.printCars(false, null, 0);
+                case 1 -> db.printCars(false, null, 0, false);
                 case 2 -> {
                     info = collectCustomerInfo(customerOperation.ADD);
                     db.addCustomer(info);
@@ -116,7 +116,7 @@ public class Application {
                             db.printCities();
                             System.out.print("Choose the city: ");
                             city = scan.nextLine();
-                            db.printCars(true, city, 0);
+                            db.printCars(true, city, 0, true);
                             pause();
                         }
                     }
