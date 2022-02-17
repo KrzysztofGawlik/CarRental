@@ -92,7 +92,7 @@ public class Application {
                     );
             userInput = scan.nextInt();
             switch (userInput) {
-                case 1 -> db.listAllCars();
+                case 1 -> db.printCars(true, null, 0);
                 case 2 -> {
                     info = collectCustomerInfo(customerOperation.ADD);
                     db.addCustomer(info);
@@ -104,7 +104,13 @@ public class Application {
                 case 4 -> {
                     info = collectCustomerInfo(customerOperation.LOGIN);
                     if(db.authenticateUser(info) && db.isRentalPossible(info.get("login"))){
-                        // Code if user logged in and has no car to return
+//                        boolean processing = true;
+//                        while(processing){
+//                            System.out.println("--- CITIES ---");
+//                            db.printCities();
+//                            System.out.print("Choose the city: ");
+//
+//                        }
                     }
                 }
             }

@@ -1,6 +1,8 @@
+import javax.annotation.Nullable;
 import java.security.InvalidParameterException;
 import java.sql.*;
 import java.util.HashMap;
+import java.util.Objects;
 
 public class JdbcComponent {
     private String uri, user, password;
@@ -25,24 +27,46 @@ public class JdbcComponent {
         }
         return password;
     }
-    public void listAllCars() {
-        try (
-            Connection connection = DriverManager.getConnection(uri, user, password);
-            PreparedStatement preparedStatement = connection.prepareStatement(
-                    "SELECT * FROM car");
-            ResultSet resultSet = preparedStatement.executeQuery())
-            {
-                System.out.println("-".repeat(54));
-                System.out.format("%-4s | %-10s | %-15s | %-15s|\n%s\n", "ID", "PLATES", "MAKE", "MODEL", "-".repeat(54));
-                while(resultSet.next()) {
-                    int id = resultSet.getInt("id");
-                    String regPlate = resultSet.getString("reg_plate");
-                    String make = resultSet.getString("make");
-                    String model = resultSet.getString("model");
-                    System.out.format("%-4d | %-10s | %-15s | %-15s|\n", id, regPlate, make, model);
+    public void printCars(boolean detailed, @Nullable String city, int price_cat) {
+        try (Connection connection = DriverManager.getConnection(uri, user, password)) {
+
+            String sql = "SELECT * FROM car, price_cat, branch WHERE car.price_cat=price_cat.id AND car.branch=branch.id ";
+            sql += (city == null) ? "AND city=city " : String.format("AND city='%s' ", city) ;
+            sql += (price_cat == 0) ? "AND price_cat.id=price_cat.id " : String.format("AND price_cat.id=%d ", price_cat);
+            PreparedStatement preparedStatement = connection.prepareStatement(sql);
+            ResultSet resultSet = preparedStatement.executeQuery();
+            // Create template for displaying each row
+            String template = (detailed) ?
+                    "| %-10s | %-20s | %-20s | %-20s | %-15s | %8s | %8s | %8s |\n" :
+                    "| %-20s | %-20s | %-20s | %-15s |\n" ;
+            // Create table header
+            String header;
+            if(detailed) {
+                header = String.format(template, "Plates", "Make", "Model", "Branch", "Category", "24 hrs", "7 days", "1 month");
+            }
+            else {
+                header = String.format(template, "Make", "Model", "Branch", "Category");
+            }
+            System.out.printf("%s\n%s%s\n", "-".repeat(header.length()), header, "-".repeat(header.length()));
+
+            while(resultSet.next()) {
+                String regPlate = resultSet.getString("reg_plate");
+                String make = resultSet.getString("make");
+                String model = resultSet.getString("model");
+                String branch = resultSet.getString("branch_name");
+                String category = resultSet.getString("label");
+                float[] price = {
+                        resultSet.getFloat("rent_24h"),
+                        resultSet.getFloat("rent_7d"),
+                        resultSet.getFloat("rent_1m") };
+                if(detailed){
+                    System.out.printf(template, regPlate, make, model, branch, category, price[0], price[1], price[2]);
+                } else {
+                    System.out.printf(template, make, model, branch, category);
                 }
-                System.out.println("-".repeat(54));
-            } catch (Exception e) {
+            }
+            System.out.println("-".repeat(header.length()));
+        } catch (Exception e) {
             System.out.println("ERROR: Unable to list the cars!");
         }
     }
