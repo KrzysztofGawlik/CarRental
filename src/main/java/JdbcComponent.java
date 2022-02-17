@@ -187,4 +187,38 @@ public class JdbcComponent {
             System.out.println("ERROR: Unable to list the cities!");
         }
     }
+    public void rentCar(String login, String plateNo){
+        try(Connection connection = DriverManager.getConnection(uri,user,password)){
+            System.out.println("INFO: Retrieving necessary information...");
+            PreparedStatement statement = connection.prepareStatement("""
+                    SELECT (SELECT id FROM customer WHERE login=?) AS customerID, 
+                    (SELECT agency FROM branch,car WHERE car.branch=branch.id AND reg_plate=?) AS agencyID, 
+                    (SELECT id FROM car WHERE reg_plate=?) AS carID """);
+            statement.setString(1, login);
+            statement.setString(2, plateNo);
+            statement.setString(3, plateNo);
+            ResultSet result = statement.executeQuery();
+            if(result.next()){
+                System.out.println("INFO: Booking new rental...");
+                int customerId = result.getInt("customerID");
+                int agencyId = result.getInt("agencyID");
+                int carId = result.getInt("carID");
+                statement = connection.prepareStatement("""
+                        INSERT INTO booking(customer_id,agency_id,car_id,start_date) VALUES
+                        (?, ?, ?, CURRENT_TIMESTAMP()) """);
+                statement.setInt(1, customerId);
+                statement.setInt(2, agencyId);
+                statement.setInt(3, carId);
+                statement.executeUpdate();
+                statement = connection.prepareStatement("UPDATE car SET returned=false WHERE id=?");
+                statement.setInt(1, carId);
+                statement.executeUpdate();
+                System.out.printf("INFO: Rental started! Registration plates: %s (for user: %s)\n", plateNo, login);
+            } else {
+                System.out.println("ERROR: Unable to collect data for rental process!");
+            }
+        } catch (Exception e) {
+            System.out.println("ERROR: Unable to finish the rental process!");
+        }
+    }
 }

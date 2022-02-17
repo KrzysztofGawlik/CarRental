@@ -38,13 +38,6 @@ public class Application {
         return data;
     }
 
-    static void pause(){
-        try {
-            System.in.read();
-        } catch (Exception e) {
-            System.exit(1);
-        }
-    }
     static void pause(String alt){
         try {
             System.out.print("\n" + alt);
@@ -110,14 +103,20 @@ public class Application {
                     info = collectCustomerInfo(customerOperation.LOGIN);
                     if(db.authenticateUser(info) && db.isRentalPossible(info.get("login"))){
                         boolean processing = true;
-                        String city;
+                        String city, plateNo;
                         while(processing){
                             System.out.println("--- CITIES ---");
                             db.printCities();
                             System.out.print("Choose the city: ");
                             city = scan.nextLine();
                             db.printCars(true, city, 0, true);
-                            pause();
+                            System.out.print("Input plate number of the car you want to rent (no input - abort): ");
+                            plateNo = scan.nextLine();
+                            if(plateNo.isEmpty()){
+                                processing = false;
+                            } else {
+                                db.rentCar(info.get("login"), plateNo);
+                            }
                         }
                     }
                 }
