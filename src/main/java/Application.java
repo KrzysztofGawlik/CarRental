@@ -114,7 +114,7 @@ public class Application {
                         while(processing){
                             System.out.println("--- CITIES ---");
                             db.printCities();
-                            System.out.println("Choose the city: ");
+                            System.out.print("Choose the city: ");
                             city = scan.nextLine();
                             db.printCars(true, city, 0);
                             pause();

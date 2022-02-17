@@ -58,11 +58,14 @@ public class JdbcComponent {
                     String branch = resultSet.getString("branch_name");
                     String category = resultSet.getString("label");
                     float[] price = {
-                            resultSet.getFloat("format(rent_24h,2)"),
+                            resultSet.getFloat("rent_24h"),
                             resultSet.getFloat("rent_7d"),
                             resultSet.getFloat("rent_1m")};
                     if (detailed) {
-                        System.out.printf(template, regPlate, make, model, branch, category, price[0], price[1], price[2]);
+                        System.out.printf(template, regPlate, make, model, branch, category,
+                                String.format("%.2f",price[0]),
+                                String.format("%.2f",price[1]),
+                                String.format("%.2f",price[2]));
                     } else {
                         System.out.printf(template, make, model, branch, category);
                     }
@@ -159,10 +162,10 @@ public class JdbcComponent {
             PreparedStatement statement = connection.prepareStatement("""
                     SELECT start_date, return_date FROM customer, booking
                     WHERE customer.id=booking.customer_id
-                    AND customer.login=? AND return_date IS NULL """); // BUG - NULL not possible (default all 0's)
+                    AND customer.login=? AND return_date='0000-00-00 00:00:00' """);
             statement.setString(1, login);
             if (statement.executeQuery().next()) {
-                System.out.println("ERROR: You cannot rent a car, because you at least one car not returned!");
+                System.out.println("ERROR: You cannot rent a car, because you have at least one car not returned!");
                 return false;
             } else {
                 System.out.println("INFO: All cars returned, you can rent a new car!");
