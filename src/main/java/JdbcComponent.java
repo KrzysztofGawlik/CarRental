@@ -2,7 +2,6 @@ import javax.annotation.Nullable;
 import java.security.InvalidParameterException;
 import java.sql.*;
 import java.util.HashMap;
-import java.util.Objects;
 
 public class JdbcComponent {
     private String uri, user, password;
@@ -35,35 +34,39 @@ public class JdbcComponent {
             sql += (price_cat == 0) ? "AND price_cat.id=price_cat.id " : String.format("AND price_cat.id=%d ", price_cat);
             PreparedStatement preparedStatement = connection.prepareStatement(sql);
             ResultSet resultSet = preparedStatement.executeQuery();
-            // Create template for displaying each row
-            String template = (detailed) ?
-                    "| %-10s | %-20s | %-20s | %-20s | %-15s | %8s | %8s | %8s |\n" :
-                    "| %-20s | %-20s | %-20s | %-15s |\n" ;
-            // Create table header
-            String header;
-            if(detailed) {
-                header = String.format(template, "Plates", "Make", "Model", "Branch", "Category", "24 hrs", "7 days", "1 month");
-            }
-            else {
-                header = String.format(template, "Make", "Model", "Branch", "Category");
-            }
-            System.out.printf("%s\n%s%s\n", "-".repeat(header.length()), header, "-".repeat(header.length()));
+            String header = "";
 
-            while(resultSet.next()) {
-                String regPlate = resultSet.getString("reg_plate");
-                String make = resultSet.getString("make");
-                String model = resultSet.getString("model");
-                String branch = resultSet.getString("branch_name");
-                String category = resultSet.getString("label");
-                float[] price = {
-                        resultSet.getFloat("rent_24h"),
-                        resultSet.getFloat("rent_7d"),
-                        resultSet.getFloat("rent_1m") };
-                if(detailed){
-                    System.out.printf(template, regPlate, make, model, branch, category, price[0], price[1], price[2]);
-                } else {
-                    System.out.printf(template, make, model, branch, category);
+            if(!resultSet.next())
+                System.out.println("INFO: No cars available in this location.");
+            else {
+                // Create template for displaying each row
+                String template = (detailed) ?
+                        "| %-10s | %-20s | %-20s | %-20s | %-15s | %8s | %8s | %8s |\n" :
+                        "| %-20s | %-20s | %-20s | %-15s |\n" ;
+                // Modify table header
+                if(detailed) {
+                    header = String.format(template, "Plates", "Make", "Model", "Branch", "Category", "24 hrs", "7 days", "1 month");
                 }
+                else {
+                    header = String.format(template, "Make", "Model", "Branch", "Category");
+                }
+                System.out.printf("%s\n%s%s\n", "-".repeat(header.length()), header, "-".repeat(header.length()));
+                do {
+                    String regPlate = resultSet.getString("reg_plate");
+                    String make = resultSet.getString("make");
+                    String model = resultSet.getString("model");
+                    String branch = resultSet.getString("branch_name");
+                    String category = resultSet.getString("label");
+                    float[] price = {
+                            resultSet.getFloat("rent_24h"),
+                            resultSet.getFloat("rent_7d"),
+                            resultSet.getFloat("rent_1m")};
+                    if (detailed) {
+                        System.out.printf(template, regPlate, make, model, branch, category, price[0], price[1], price[2]);
+                    } else {
+                        System.out.printf(template, make, model, branch, category);
+                    }
+                } while (resultSet.next());
             }
             System.out.println("-".repeat(header.length()));
         } catch (Exception e) {
@@ -154,7 +157,7 @@ public class JdbcComponent {
             PreparedStatement statement = connection.prepareStatement("""
                     SELECT start_date, return_date FROM customer, booking
                     WHERE customer.id=booking.customer_id
-                    AND customer.login=? AND return_date IS NULL """);
+                    AND customer.login=? AND return_date IS NULL """); // BUG - NULL not possible (default all 0's)
             statement.setString(1, login);
             if (statement.executeQuery().next()) {
                 System.out.println("ERROR: You cannot rent a car, because you at least one car not returned!");

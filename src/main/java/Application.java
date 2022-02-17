@@ -78,7 +78,7 @@ public class Application {
 
         JdbcComponent db = new JdbcComponent(uri, username, passwd);
 
-        int userInput = 1;
+        int userInput = -1;
         HashMap<String, String> info = new HashMap<>();
         while(userInput != 0){
             pause("Press Enter to continue...");
@@ -90,9 +90,13 @@ public class Application {
                             [4] Rent a car
                             [0] Quit"""
                     );
-            userInput = scan.nextInt();
+            try{
+                userInput = Integer.parseInt(scan.nextLine());
+            } catch (Exception e) {
+                System.out.println("ERROR: Unrecognizable input, please provide a valid number...");
+            }
             switch (userInput) {
-                case 1 -> db.printCars(true, null, 0);
+                case 1 -> db.printCars(false, null, 0);
                 case 2 -> {
                     info = collectCustomerInfo(customerOperation.ADD);
                     db.addCustomer(info);
@@ -104,15 +108,19 @@ public class Application {
                 case 4 -> {
                     info = collectCustomerInfo(customerOperation.LOGIN);
                     if(db.authenticateUser(info) && db.isRentalPossible(info.get("login"))){
-//                        boolean processing = true;
-//                        while(processing){
-//                            System.out.println("--- CITIES ---");
-//                            db.printCities();
-//                            System.out.print("Choose the city: ");
-//
-//                        }
+                        boolean processing = true;
+                        String city;
+                        while(processing){
+                            System.out.println("--- CITIES ---");
+                            db.printCities();
+                            System.out.println("Choose the city: ");
+                            city = scan.nextLine();
+                            db.printCars(true, city, 0);
+                            pause();
+                        }
                     }
                 }
+                default -> System.out.println("INFO: No such option, please check the menu options.");
             }
             info.clear();
         }
