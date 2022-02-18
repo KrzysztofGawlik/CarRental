@@ -166,7 +166,7 @@ public class JdbcComponent {
                     AND customer.login=? AND completed=0 """);
             statement.setString(1, login);
             if (statement.executeQuery().next()) {
-                System.out.println("ERROR: You cannot rent a car, because you have at least one car not returned!");
+                System.out.println("INFO: You cannot rent a car, because you have at least one car not returned!");
                 return false;
             } else {
                 System.out.println("INFO: All cars returned, you can rent a new car!");

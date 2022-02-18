@@ -125,13 +125,12 @@ public class Application {
                 case 5 -> {
                     info = collectCustomerInfo(customerOperation.LOGIN);
                     if(db.authenticateUser(info)){
-                        if(db.isRentalPossible(info.get("login"))){
-                            System.out.println("You have no cars rented!");
-                        } else {
+                        if(!db.isRentalPossible(info.get("login"))){
                             System.out.println("The following car will be marked as returned:");
                             db.printRentedFor(info.get("login"));
                             System.out.print("Type 'yes' to continue: ");
-                            if ("yes".equals(scan.nextLine())) {
+                            String confirm = scan.nextLine();
+                            if (confirm.equals("yes")) {
                                 db.returnCar(info.get("login"));
                             } else {
                                 System.out.println("INFO: No action taken.");
