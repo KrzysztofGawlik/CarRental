@@ -113,12 +113,12 @@ public class Application {
                             db.printCars(true, city, 0, true);
                             System.out.print("Input plate number of the car you want to rent (no input - abort): ");
                             plateNo = scan.nextLine();
-                            if(plateNo.isEmpty()){
-                                processing = false;
-                            } else {
+
+                            if (!plateNo.isEmpty()) {
                                 db.rentCar(info.get("login"), plateNo);
-                                processing = false;
                             }
+                            processing = false;
+
                         }
                     }
                 }

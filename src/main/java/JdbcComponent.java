@@ -199,10 +199,11 @@ public class JdbcComponent {
             statement.setString(3, plateNo);
             ResultSet result = statement.executeQuery();
             if(result.next()){
-                System.out.println("INFO: Booking new rental...");
                 int customerId = result.getInt("customerID");
                 int agencyId = result.getInt("agencyID");
                 int carId = result.getInt("carID");
+                if(carId <= 0) throw new InvalidParameterException("ERROR: Registration plates are invalid!");
+                System.out.println("INFO: Booking new rental...");
                 statement = connection.prepareStatement("""
                         INSERT INTO booking(customer_id,agency_id,car_id,start_date,completed) VALUES
                         (?, ?, ?, CURRENT_TIMESTAMP(), 0) """);
@@ -217,6 +218,8 @@ public class JdbcComponent {
             } else {
                 System.out.println("ERROR: Unable to collect data for rental process!");
             }
+        } catch (InvalidParameterException e) {
+            System.out.println(e.getMessage());
         } catch (Exception e) {
             System.out.println("ERROR: Unable to finish the rental process!");
         }
