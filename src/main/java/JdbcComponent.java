@@ -161,9 +161,9 @@ public class JdbcComponent {
     public boolean isRentalPossible(String login){
         try(Connection connection = DriverManager.getConnection(uri,user,password)){
             PreparedStatement statement = connection.prepareStatement("""
-                    SELECT returned FROM customer, car, booking 
-                    WHERE customer.id=booking.customer_id AND booking.car_id=car.id 
-                    AND customer.login=? AND returned=false """);
+                    SELECT completed FROM customer, booking 
+                    WHERE customer.id=booking.customer_id 
+                    AND customer.login=? AND completed=0 """);
             statement.setString(1, login);
             if (statement.executeQuery().next()) {
                 System.out.println("ERROR: You cannot rent a car, because you have at least one car not returned!");
@@ -204,8 +204,8 @@ public class JdbcComponent {
                 int agencyId = result.getInt("agencyID");
                 int carId = result.getInt("carID");
                 statement = connection.prepareStatement("""
-                        INSERT INTO booking(customer_id,agency_id,car_id,start_date) VALUES
-                        (?, ?, ?, CURRENT_TIMESTAMP()) """);
+                        INSERT INTO booking(customer_id,agency_id,car_id,start_date,completed) VALUES
+                        (?, ?, ?, CURRENT_TIMESTAMP(), 0) """);
                 statement.setInt(1, customerId);
                 statement.setInt(2, agencyId);
                 statement.setInt(3, carId);
@@ -219,6 +219,55 @@ public class JdbcComponent {
             }
         } catch (Exception e) {
             System.out.println("ERROR: Unable to finish the rental process!");
+        }
+    }
+    public void printRentedFor(String login){
+        try(Connection connection = DriverManager.getConnection(uri,user,password)){
+            PreparedStatement statement = connection.prepareStatement("""
+                    SELECT reg_plate,make,model FROM car,booking,customer 
+                    WHERE car.id=booking.car_id 
+                    AND booking.customer_id=customer.id 
+                    AND customer.login=? AND returned=false AND completed=0 """);
+            statement.setString(1, login);
+            ResultSet result = statement.executeQuery();
+            while(result.next()){
+                System.out.printf("\t> %s %s (reg. plates: %s)\n",
+                        result.getString("make"),
+                        result.getString("model"),
+                        result.getString("reg_plate"));
+            }
+        } catch (Exception e){
+            System.out.println("ERROR: Unable to list rented cars!");
+        }
+    }
+    public void returnCar(String login){
+        try(Connection connection = DriverManager.getConnection(uri,user,password)){
+            System.out.println("INFO: Getting customer ID...");
+            PreparedStatement statement = connection.prepareStatement("SELECT id FROM customer WHERE login=?");
+            statement.setString(1, login);
+            ResultSet result = statement.executeQuery(); result.next();
+            int customerId = result.getInt("id");
+            System.out.println("INFO: Getting car ID...");
+            statement = connection.prepareStatement("""
+                    SELECT car_id FROM booking WHERE customer_id=? 
+                    AND completed=0 """);
+            statement.setInt(1, customerId);
+            result = statement.executeQuery(); result.next();
+            int carId = result.getInt("car_id");
+            System.out.println("INFO: Updating booking record...");
+            statement = connection.prepareStatement("""
+                    UPDATE booking SET return_date=CURRENT_TIMESTAMP(), completed=1 
+                    WHERE customer_id=? AND car_id=? AND completed=0 """);
+            statement.setInt(1, customerId);
+            statement.setInt(2, carId);
+            statement.executeUpdate();
+            System.out.println("INFO: Updating car status....");
+            statement = connection.prepareStatement("UPDATE car SET returned=1 WHERE id=? ");
+            statement.setInt(1, carId);
+            statement.executeUpdate();
+            System.out.println("INFO: Car return successfully completed!");
+        } catch (Exception e){
+            System.out.println("ERROR: Unable to return car!");
         }
     }
 }

@@ -74,13 +74,14 @@ public class Application {
         int userInput = -1;
         HashMap<String, String> info = new HashMap<>();
         while(userInput != 0){
-            pause("Press Enter to continue...");
+            pause("Press Enter to display menu...");
             System.out.println("""
                             --- MENU ---
                             [1] List all cars
                             [2] Add a customer
                             [3] Register customer
                             [4] Rent a car
+                            [5] Return a car
                             [0] Quit"""
                     );
             try{
@@ -116,6 +117,24 @@ public class Application {
                                 processing = false;
                             } else {
                                 db.rentCar(info.get("login"), plateNo);
+                                processing = false;
+                            }
+                        }
+                    }
+                }
+                case 5 -> {
+                    info = collectCustomerInfo(customerOperation.LOGIN);
+                    if(db.authenticateUser(info)){
+                        if(db.isRentalPossible(info.get("login"))){
+                            System.out.println("You have no cars rented!");
+                        } else {
+                            System.out.println("The following car will be marked as returned:");
+                            db.printRentedFor(info.get("login"));
+                            System.out.print("Type 'yes' to continue: ");
+                            if ("yes".equals(scan.nextLine())) {
+                                db.returnCar(info.get("login"));
+                            } else {
+                                System.out.println("INFO: No action taken.");
                             }
                         }
                     }
